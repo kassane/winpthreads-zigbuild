@@ -6,11 +6,31 @@ pub fn build(b: *std.Build) void {
     const target = b.standardTargetOptions(.{});
     const optimize = b.standardOptimizeOption(.{});
 
-    const lib = b.addStaticLibrary(.{
-        .name = "winpthreads",
-        .optimize = optimize,
-        .target = target,
-    });
+    const shared = b.option(bool, "Shared", "Build Winpthreads Shared Library [default: true]") orelse true;
+    const tests = b.option(bool, "Tests", "Build Tests [default: false]") orelse false;
+
+    const lib = if (shared)
+        b.addSharedLibrary(.{
+            .name = "winpthreads",
+            .optimize = optimize,
+            .target = target,
+            .version = .{
+                .major = 1,
+                .minor = 0,
+                .patch = 0,
+            },
+        })
+    else
+        b.addStaticLibrary(.{
+            .name = "winpthreads",
+            .optimize = optimize,
+            .target = target,
+            .version = .{
+                .major = 1,
+                .minor = 0,
+                .patch = 0,
+            },
+        });
     lib.want_lto = false;
     lib.disable_sanitize_c = true;
     if (optimize == .Debug or optimize == .ReleaseSafe)
@@ -28,16 +48,64 @@ pub fn build(b: *std.Build) void {
     lib.install();
     lib.installHeadersDirectory("include", "");
 
-    const exe = b.addExecutable(.{
-        .name = "nanosleep",
-        .target = target,
-        .optimize = optimize,
-    });
-    exe.addCSourceFile("tests/t_clock_getres.c", &.{"-Wall"});
-    exe.linkLibrary(lib);
-    exe.linkLibC();
-    exe.install();
+    if (tests) {
+        buildExe(b, lib, .{
+            .name = "test_nanosleep",
+            .file = "tests/t_nanosleep.c",
+        });
+        buildExe(b, lib, .{
+            .name = "test_clock_gettime",
+            .file = "tests/t_clock_gettime.c",
+        });
+        buildExe(b, lib, .{
+            .name = "test_clock_getres",
+            .file = "tests/t_clock_getres.c",
+        });
+    }
 }
+
+fn buildExe(b: *std.Build, pthread: *std.Build.CompileStep, binfo: BuildInfo) void {
+    const exe = b.addExecutable(.{
+        .name = binfo.name,
+        .target = pthread.target,
+        .optimize = pthread.optimize,
+    });
+    if (pthread.optimize != .Debug)
+        exe.strip = true
+    else
+        exe.sanitize_thread = true;
+    if (exe.target.isWindows())
+        exe.want_lto = false;
+    exe.addIncludePath("include");
+    exe.addIncludePath("src");
+    exe.linkLibrary(pthread);
+    exe.addCSourceFile(
+        binfo.file,
+        &.{
+            "-Wall",
+            "-Wextra",
+        },
+    );
+    exe.linkLibC();
+
+    if (!std.mem.startsWith(u8, binfo.name, "test"))
+        exe.install();
+    const run_cmd = exe.run();
+
+    run_cmd.step.dependOn(b.getInstallStep());
+
+    if (b.args) |args| {
+        run_cmd.addArgs(args);
+    }
+
+    const run_step = b.step(binfo.name, b.fmt("Run the {s}", .{binfo.name}));
+    run_step.dependOn(&run_cmd.step);
+}
+
+const BuildInfo = struct {
+    name: []const u8,
+    file: []const u8,
+};
 
 fn checkVersion() bool {
     const builtin = @import("builtin");

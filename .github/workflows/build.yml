@@ -1,0 +1,23 @@
+name: build
+
+on: [push, pull_request]
+
+jobs:
+  build:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          submodules: recursive
+          fetch-depth: 0
+      - uses: goto-bus-stop/setup-zig@v2
+        with:
+          version: master
+      
+      - name: Build Summary
+        run: zig build -Doptimize=ReleaseSafe -fsummary -freference-trace
+      
+      - name: Test
+        run: |
+            zig build test_nanosleep -DTests=true -DShared=false -Doptimize=ReleaseSafe
+            zig build test_clock_gettime -DTests=true -DShared=false -Doptimize=ReleaseSafe
