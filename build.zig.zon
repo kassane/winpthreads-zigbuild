@@ -1,0 +1,5 @@
+.{
+    .name = "winpthreads",
+    .version = "",
+    .dependencies = .{},
+}
