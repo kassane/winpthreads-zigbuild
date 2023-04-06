@@ -3,10 +3,13 @@ const std = @import("std");
 pub fn build(b: *std.Build) void {
     if (comptime !checkVersion())
         @compileError("Please! Update zig toolchain >= 0.11!");
-    const target = b.standardTargetOptions(.{});
+    const target: std.zig.CrossTarget = .{
+        .os_tag = .windows,
+        .abi = .gnu,
+    };
     const optimize = b.standardOptimizeOption(.{});
 
-    const shared = b.option(bool, "Shared", "Build Winpthreads Shared Library [default: true]") orelse true;
+    const shared = b.option(bool, "Shared", "Build Winpthreads Shared Library [default: false]") orelse false;
     const tests = b.option(bool, "Tests", "Build Tests [default: false]") orelse false;
 
     const lib = if (shared)
@@ -15,7 +18,7 @@ pub fn build(b: *std.Build) void {
             .optimize = optimize,
             .target = target,
             .version = .{
-                .major = 1,
+                .major = 10,
                 .minor = 0,
                 .patch = 0,
             },
@@ -25,11 +28,6 @@ pub fn build(b: *std.Build) void {
             .name = "winpthreads",
             .optimize = optimize,
             .target = target,
-            .version = .{
-                .major = 1,
-                .minor = 0,
-                .patch = 0,
-            },
         });
     lib.want_lto = false;
     lib.disable_sanitize_c = true;

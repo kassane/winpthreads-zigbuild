@@ -17,7 +17,11 @@ jobs:
       - name: Build Summary
         run: zig build -Doptimize=ReleaseSafe -fsummary -freference-trace
       
-      - name: Test
-        run: |
-            zig build test_nanosleep -DTests=true -DShared=false -Doptimize=ReleaseSafe
-            zig build test_clock_gettime -DTests=true -DShared=false -Doptimize=ReleaseSafe
+      - name: Test nanosleep
+        run: zig build test_nanosleep -DTests=true -Doptimize=ReleaseSafe
+
+      - name: Test clock_gettime
+        run: zig build test_clock_gettime -DTests=true -Doptimize=ReleaseSafe
+      
+      - name: Test clock_gettime
+        run: zig build test_clock_getres -DTests=true -Doptimize=ReleaseSafe
