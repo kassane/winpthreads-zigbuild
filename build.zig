@@ -43,7 +43,7 @@ pub fn build(b: *std.Build) void {
     lib.addIncludePath("include");
     lib.addIncludePath("src");
     lib.linkLibC();
-    lib.install();
+    b.installArtifact(lib);
     lib.installHeadersDirectory("include", "");
 
     if (tests) {
@@ -69,9 +69,7 @@ fn buildExe(b: *std.Build, pthread: *std.Build.CompileStep, binfo: BuildInfo) vo
         .optimize = pthread.optimize,
     });
     if (pthread.optimize != .Debug)
-        exe.strip = true
-    else
-        exe.sanitize_thread = true;
+        exe.strip = true;
     if (exe.target.isWindows())
         exe.want_lto = false;
     exe.addIncludePath("include");
@@ -87,8 +85,8 @@ fn buildExe(b: *std.Build, pthread: *std.Build.CompileStep, binfo: BuildInfo) vo
     exe.linkLibC();
 
     if (!std.mem.startsWith(u8, binfo.name, "test"))
-        exe.install();
-    const run_cmd = exe.run();
+        b.installArtifact(exe);
+    const run_cmd = b.addRunArtifact(exe);
 
     run_cmd.step.dependOn(b.getInstallStep());
 
