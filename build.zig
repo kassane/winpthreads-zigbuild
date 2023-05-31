@@ -3,10 +3,9 @@ const std = @import("std");
 pub fn build(b: *std.Build) void {
     if (comptime !checkVersion())
         @compileError("Please! Update zig toolchain >= 0.11!");
-    const target: std.zig.CrossTarget = .{
-        .os_tag = .windows,
-        .abi = .gnu,
-    };
+    const target = b.standardTargetOptions(.{
+        .whitelist = permissive_targets,
+    });
     const optimize = b.standardOptimizeOption(.{});
 
     const shared = b.option(bool, "Shared", "Build Winpthreads Shared Library [default: false]") orelse false;
@@ -129,4 +128,22 @@ const src: []const []const u8 = &.{
     "src/sched.c",
     "src/ref.c",
     "src/rwlock.c",
+};
+
+const permissive_targets: []const std.zig.CrossTarget = &.{
+    .{
+        .cpu_arch = .aarch64,
+        .os_tag = .windows,
+        .abi = .gnu,
+    },
+    .{
+        .cpu_arch = .x86,
+        .os_tag = .windows,
+        .abi = .gnu,
+    },
+    .{
+        .cpu_arch = .x86_64,
+        .os_tag = .windows,
+        .abi = .gnu,
+    },
 };
