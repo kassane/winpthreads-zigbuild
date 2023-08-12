@@ -5,6 +5,11 @@ pub fn build(b: *std.Build) void {
         @compileError("Please! Update zig toolchain >= 0.11!");
     const target = b.standardTargetOptions(.{
         .whitelist = permissive_targets,
+        .default_target = .{
+            .cpu_arch = .x86_64,
+            .os_tag = .windows,
+            .abi = .gnu,
+        },
     });
     const optimize = b.standardOptimizeOption(.{});
 
@@ -39,8 +44,8 @@ pub fn build(b: *std.Build) void {
         "-Wextra",
     });
     lib.defineCMacro("__USE_MINGW_ANSI_STDIO", "1");
-    lib.addIncludePath("include");
-    lib.addIncludePath("src");
+    lib.addIncludePath(.{ .path = "include" });
+    lib.addIncludePath(.{ .path = "src" });
     lib.linkLibC();
     b.installArtifact(lib);
     lib.installHeadersDirectory("include", "");
@@ -71,16 +76,17 @@ fn buildExe(b: *std.Build, pthread: *std.Build.CompileStep, binfo: BuildInfo) vo
         exe.strip = true;
     if (exe.target.isWindows())
         exe.want_lto = false;
-    exe.addIncludePath("include");
-    exe.addIncludePath("src");
+    exe.addIncludePath(.{ .path = "include" });
+    exe.addIncludePath(.{ .path = "src" });
     exe.linkLibrary(pthread);
-    exe.addCSourceFile(
-        binfo.file,
-        &.{
+    exe.addCSourceFile(.{
+        .file = .{ .path = binfo.file },
+        .flags = &.{
             "-Wall",
             "-Wextra",
+            "-Wpedantic",
         },
-    );
+    });
     exe.linkLibC();
 
     if (!std.mem.startsWith(u8, binfo.name, "test"))
@@ -108,7 +114,7 @@ fn checkVersion() bool {
         return false;
     }
 
-    const needed_version = std.SemanticVersion.parse("0.11.0-dev.2191") catch unreachable;
+    const needed_version = std.SemanticVersion.parse("0.11.0") catch unreachable;
     const version = builtin.zig_version;
     const order = version.order(needed_version);
     return order != .lt;
