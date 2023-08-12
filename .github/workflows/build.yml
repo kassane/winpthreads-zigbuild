@@ -1,6 +1,6 @@
 name: build
 
-on: [push, pull_request]
+on: [push]
 
 jobs:
   build:
@@ -12,16 +12,16 @@ jobs:
           fetch-depth: 0
       - uses: goto-bus-stop/setup-zig@v2
         with:
-          version: master
+          version: 0.11.0
       
       - name: Build Summary
-        run: zig build -Doptimize=ReleaseSafe -fsummary -freference-trace
+        run: zig build --summary all -freference-trace
       
       - name: Test nanosleep
-        run: zig build test_nanosleep -DTests=true -Doptimize=ReleaseSafe
+        run: zig build test_nanosleep -DTests
 
       - name: Test clock_gettime
-        run: zig build test_clock_gettime -DTests=true -Doptimize=ReleaseSafe
+        run: zig build test_clock_gettime -DTests
       
-      - name: Test clock_gettime
-        run: zig build test_clock_getres -DTests=true -Doptimize=ReleaseSafe
+      - name: Test clock_getres
+        run: zig build test_clock_getres -DTests
