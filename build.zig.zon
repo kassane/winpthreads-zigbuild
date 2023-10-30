@@ -1,5 +1,6 @@
 .{
     .name = "winpthreads",
     .version = "10.0.0",
-    .dependencies = .{},
+    .license = "Copyright (c) 2011-2023 mingw-w64 project",
+    .paths = .{""},
 }

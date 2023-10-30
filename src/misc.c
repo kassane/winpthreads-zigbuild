@@ -24,6 +24,13 @@
 #include "windows.h"
 #include "misc.h"
 
+static ULONGLONG (*GetTickCount64FuncPtr) (VOID);
+
+static void __attribute__((constructor)) ctor (void)
+{
+  GetTickCount64FuncPtr = (__typeof__(GetTickCount64FuncPtr)) GetProcAddress(GetModuleHandle("kernel32.dll"), "GetTickCount64");
+}
+
 unsigned long long _pthread_time_in_ms(void)
 {
     FILETIME ft;
@@ -55,10 +62,9 @@ unsigned long long _pthread_rel_time_in_ms(const struct timespec *ts)
 static unsigned long long
 _pthread_get_tick_count (long long *frequency)
 {
-#if defined (_WIN32_WINNT) && (_WIN32_WINNT >= _WIN32_WINNT_VISTA)
-  (void) frequency; /* unused */
-  return GetTickCount64 ();
-#else
+  if (GetTickCount64FuncPtr != NULL)
+    return GetTickCount64FuncPtr ();
+
   LARGE_INTEGER freq, timestamp;
 
   if (*frequency == 0)
@@ -74,7 +80,6 @@ _pthread_get_tick_count (long long *frequency)
 
   /* Fallback */
   return GetTickCount ();
-#endif
 }
 
 /* A wrapper around WaitForSingleObject() that ensures that
