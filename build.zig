@@ -137,6 +137,7 @@ const src: []const []const u8 = &.{
 };
 
 const permissive_targets: []const std.zig.CrossTarget = &.{
+    .{}, // native
     .{
         .cpu_arch = .aarch64,
         .os_tag = .windows,
