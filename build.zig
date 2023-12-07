@@ -39,10 +39,10 @@ pub fn build(b: *std.Build) void {
         lib.bundle_compiler_rt = true
     else
         lib.strip = true;
-    lib.addCSourceFiles(src, &.{
+    lib.addCSourceFiles(.{ .files = src, .flags = &.{
         "-Wall",
         "-Wextra",
-    });
+    } });
     lib.defineCMacro("__USE_MINGW_ANSI_STDIO", "1");
     lib.addIncludePath(.{ .path = "include" });
     lib.addIncludePath(.{ .path = "src" });
