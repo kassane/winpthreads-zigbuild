@@ -34,11 +34,11 @@ pub fn build(b: *std.Build) void {
             .target = target,
         });
     lib.want_lto = false;
-    lib.disable_sanitize_c = true;
+    lib.root_module.sanitize_c = false;
     if (optimize == .Debug or optimize == .ReleaseSafe)
         lib.bundle_compiler_rt = true
     else
-        lib.strip = true;
+        lib.root_module.strip = true;
     lib.addCSourceFiles(.{ .files = src, .flags = &.{
         "-Wall",
         "-Wextra",
@@ -66,15 +66,17 @@ pub fn build(b: *std.Build) void {
     }
 }
 
-fn buildExe(b: *std.Build, pthread: *std.Build.CompileStep, binfo: BuildInfo) void {
+fn buildExe(b: *std.Build, pthread: *std.Build.Step.Compile, binfo: BuildInfo) void {
+    const target = pthread.root_module.resolved_target.?;
+    const optimize = pthread.root_module.optimize.?;
     const exe = b.addExecutable(.{
         .name = binfo.name,
-        .target = pthread.target,
-        .optimize = pthread.optimize,
+        .target = target,
+        .optimize = optimize,
     });
-    if (pthread.optimize != .Debug)
-        exe.strip = true;
-    if (exe.target.isWindows())
+    if (optimize != .Debug)
+        exe.root_module.strip = true;
+    if (target.result.os.tag == .windows)
         exe.want_lto = false;
     exe.addIncludePath(.{ .path = "include" });
     exe.addIncludePath(.{ .path = "src" });
@@ -136,20 +138,23 @@ const src: []const []const u8 = &.{
     "src/rwlock.c",
 };
 
-const permissive_targets: []const std.zig.CrossTarget = &.{
+const permissive_targets: []const std.Target.Query = &.{
     .{}, // native
     .{
         .cpu_arch = .aarch64,
+        .cpu_model = .baseline,
         .os_tag = .windows,
         .abi = .gnu,
     },
     .{
         .cpu_arch = .x86,
+        .cpu_model = .baseline,
         .os_tag = .windows,
         .abi = .gnu,
     },
     .{
         .cpu_arch = .x86_64,
+        .cpu_model = .baseline,
         .os_tag = .windows,
         .abi = .gnu,
     },
