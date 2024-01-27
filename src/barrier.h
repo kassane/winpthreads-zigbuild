@@ -28,10 +28,13 @@
 
 #define _PTHREAD_BARRIER_FLAG (1<<30)
 
-#define CHECK_BARRIER(b)  { \
-    if (!(b) || ( ((barrier_t *)(*b))->valid != (unsigned int)LIFE_BARRIER ) ) return EINVAL; }
+#define CHECK_BARRIER(b)                                                \
+    do {                                                                \
+        if (!(b) || ( ((barrier_t *)(*b))->valid != (unsigned int)LIFE_BARRIER ) ) \
+            return EINVAL;                                              \
+    } while (0)
 
-#include "../include/semaphore.h"
+#include "semaphore.h"
 
 typedef struct barrier_t barrier_t;
 struct barrier_t

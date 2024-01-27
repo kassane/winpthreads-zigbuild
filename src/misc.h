@@ -67,22 +67,30 @@ typedef long LONGBAG;
 #define GetHandleInformation(h,f)  (1)
 #endif
 
-#define CHECK_HANDLE(h) { DWORD dwFlags; \
+#define CHECK_HANDLE(h)                                                 \
+  do {                                                                  \
+    DWORD dwFlags;                                                      \
     if (!(h) || ((h) == INVALID_HANDLE_VALUE) || !GetHandleInformation((h), &dwFlags)) \
-    return EINVAL; }
+      return EINVAL;                                                    \
+  } while (0)
 
-#define CHECK_PTR(p)    if (!(p)) return EINVAL;
+#define CHECK_PTR(p) do { if (!(p)) return EINVAL; } while (0)
 
-#define UPD_RESULT(x,r)    { int _r=(x); r = r ? r : _r; }
+#define UPD_RESULT(x,r) do { int _r = (x); (r) = (r) ? (r) : _r; } while (0)
 
-#define CHECK_THREAD(t)  { \
-    CHECK_PTR(t); \
-    CHECK_HANDLE(t->h); }
+#define CHECK_THREAD(t)                         \
+  do {                                          \
+    CHECK_PTR(t);                               \
+    CHECK_HANDLE((t)->h);                       \
+  } while (0)
 
-#define CHECK_OBJECT(o, e)  { DWORD dwFlags; \
-    if (!(o)) return e; \
+#define CHECK_OBJECT(o, e)                                              \
+  do {                                                                  \
+    DWORD dwFlags;                                                      \
+    if (!(o)) return e;                                                 \
     if (!((o)->h) || (((o)->h) == INVALID_HANDLE_VALUE) || !GetHandleInformation(((o)->h), &dwFlags)) \
-        return e; }
+      return e;                                                         \
+  } while (0)
 
 #define VALID(x)    if (!(p)) return EINVAL;
 
@@ -94,7 +102,7 @@ static WINPTHREADS_INLINE unsigned long dwMilliSecs(unsigned long long ms)
 }
 
 #ifndef _mm_pause
-#define _mm_pause()			{__asm__ __volatile__("pause");}
+#define _mm_pause() do { __asm__ __volatile__("pause"); } while (0)
 #endif
 
 #ifndef _ReadWriteBarrier
@@ -110,5 +118,19 @@ unsigned long long _pthread_time_in_ms_from_timespec(const struct timespec *ts);
 unsigned long long _pthread_rel_time_in_ms(const struct timespec *ts);
 unsigned long _pthread_wait_for_single_object (void *handle, unsigned long timeout);
 unsigned long _pthread_wait_for_multiple_objects (unsigned long count, void **handles, unsigned int all, unsigned long timeout);
+
+#if defined(__GNUC__) || defined(__clang__)
+#define likely(cond) __builtin_expect((cond) != 0, 1)
+#define unlikely(cond) __builtin_expect((cond) != 0, 0)
+#else
+#define likely(cond) (cond)
+#define unlikely(cond) (cond)
+#endif
+
+#if defined(__GNUC__) || defined(__clang__)
+#define UNREACHABLE() __builtin_unreachable()
+#elif defined(_MSC_VER)
+#define UNREACHABLE() __assume(0)
+#endif
 
 #endif

@@ -52,7 +52,7 @@ sem_init (sem_t *sem, int pshared, unsigned int value)
   if (pshared != PTHREAD_PROCESS_PRIVATE)
     return sem_result (EPERM);
 
-  if (!(sv = (sem_t) calloc (1,sizeof (*sv))))
+  if ((sv = (sem_t) calloc (1,sizeof (*sv))) == NULL)
     return sem_result (ENOMEM);
 
   sv->value = value;
@@ -254,7 +254,7 @@ sem_timedwait (sem_t *sem, const struct timespec *t)
 int
 sem_post (sem_t *sem)
 {
-  _sem_t *sv;;
+  _sem_t *sv;
 
   if (sem_std_enter (sem, &sv, 0) != 0)
     return -1;
@@ -280,7 +280,7 @@ int
 sem_post_multiple (sem_t *sem, int count)
 {
   int waiters_count;
-  _sem_t *sv;;
+  _sem_t *sv;
 
   if (count <= 0)
     return sem_result (EINVAL);

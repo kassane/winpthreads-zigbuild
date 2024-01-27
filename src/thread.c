@@ -368,10 +368,9 @@ pop_pthread_mem (void)
 static void
 free_pthread_mem (void)
 {
+#if 0
   _pthread_v *t;
 
-  if (1)
-  return;  
   pthread_mutex_lock (&mtx_pthr_locked);
   t = pthr_root;
   while (t != NULL)
@@ -401,6 +400,8 @@ free_pthread_mem (void)
     pthr_root = t;
   }
   pthread_mutex_unlock (&mtx_pthr_locked);
+#endif
+  return;
 }
 
 static void
@@ -411,24 +412,11 @@ replace_spin_keys (pthread_spinlock_t *old, pthread_spinlock_t new)
 
   if (EPERM == pthread_spin_destroy (old))
     {
-#define THREADERR "Error cleaning up spin_keys for thread "
-#define THREADERR_LEN ((sizeof (THREADERR) / sizeof (*THREADERR)) - 1)
-#define THREADID_LEN THREADERR_LEN + 66 + 1 + 1
-      int i;
-      char thread_id[THREADID_LEN] = THREADERR;
-      _ultoa ((unsigned long) GetCurrentThreadId (), &thread_id[THREADERR_LEN], 10);
-      for (i = THREADERR_LEN; thread_id[i] != '\0' && i < THREADID_LEN - 1; i++)
-        {
-        }
-      if (i < THREADID_LEN - 1)
-        {
-          thread_id[i] = '\n';
-          thread_id[i + 1] = '\0';
-        }
+#define THREADERR "Error cleaning up spin_keys for thread %lu.\n"
+      char threaderr[sizeof(THREADERR) + 8] = { 0 };
+      snprintf(threaderr, sizeof(threaderr), THREADERR, GetCurrentThreadId());
 #undef THREADERR
-#undef THREADERR_LEN
-#undef THREADID_LEN
-      OutputDebugStringA (thread_id);
+      OutputDebugStringA (threaderr);
       abort ();
     }
 
@@ -436,7 +424,7 @@ replace_spin_keys (pthread_spinlock_t *old, pthread_spinlock_t new)
 }
 
 /* Hook for TLS-based deregistration/registration of thread.  */
-static BOOL WINAPI
+static void WINAPI
 __dyn_tls_pthread (HANDLE hDllHandle, DWORD dwReason, LPVOID lpreserved)
 {
   _pthread_v *t = NULL;
@@ -503,7 +491,7 @@ __dyn_tls_pthread (HANDLE hDllHandle, DWORD dwReason, LPVOID lpreserved)
 	      push_pthread_mem (t);
 	      t = NULL;
 	      TlsSetValue (_pthread_tls, t);
-	      return TRUE;
+	      return;
 	    }
 	  pthread_mutex_destroy(&t->p_clock);
 	  replace_spin_keys (&t->spin_keys, new_spin_keys);
@@ -517,17 +505,37 @@ __dyn_tls_pthread (HANDLE hDllHandle, DWORD dwReason, LPVOID lpreserved)
 	  replace_spin_keys (&t->spin_keys, new_spin_keys);
 	}
     }
-  return TRUE;
 }
 
 /* TLS-runtime section variable.  */
-#ifdef _MSC_VER
-#pragma section(".CRT$XLF", shared)
+
+#if defined(_MSC_VER)
+/* Force a reference to _tls_used to make the linker create the TLS
+ * directory if it's not already there.  (e.g. if __declspec(thread)
+ * is not used).
+ * Force a reference to __xl_f to prevent whole program optimization
+ * from discarding the variable. */
+
+/* On x86, symbols are prefixed with an underscore. */
+# if defined(_M_IX86)
+#   pragma comment(linker, "/include:__tls_used")
+#   pragma comment(linker, "/include:___xl_f")
+# else
+#   pragma comment(linker, "/include:_tls_used")
+#   pragma comment(linker, "/include:__xl_f")
+# endif
+
+/* .CRT$XLA to .CRT$XLZ is an array of PIMAGE_TLS_CALLBACK
+ * pointers. Pick an arbitrary location for our callback.
+ *
+ * See VC\...\crt\src\vcruntime\tlssup.cpp for reference. */
+
+# pragma section(".CRT$XLF", long, read)
 #endif
-PIMAGE_TLS_CALLBACK WINPTHREADS_ATTRIBUTE((WINPTHREADS_SECTION(".CRT$XLF"))) __xl_f  = (PIMAGE_TLS_CALLBACK) __dyn_tls_pthread;
-#ifdef _MSC_VER
-#pragma data_seg()
-#endif
+
+extern const PIMAGE_TLS_CALLBACK WINPTHREADS_ATTRIBUTE((WINPTHREADS_SECTION(".CRT$XLF"))) __xl_f;
+const PIMAGE_TLS_CALLBACK WINPTHREADS_ATTRIBUTE((WINPTHREADS_SECTION(".CRT$XLF"))) __xl_f  = __dyn_tls_pthread;
+
 
 #ifdef WINPTHREAD_DBG
 static int print_state = 0;
@@ -542,13 +550,13 @@ thread_print (volatile pthread_t t, char *txt)
     if (!print_state)
       return;
     if (!t)
-      printf("T%p %d %s\n",NULL,(int)GetCurrentThreadId(),txt);
+      printf("T%p %lu %s\n",NULL,GetCurrentThreadId(),txt);
     else
       {
-	printf("T%p %d V=%0X H=%p %s\n",
-	    __pth_gpointer_locked (t), 
-	    (int)GetCurrentThreadId(), 
-	    (int) (__pth_gpointer_locked (t))->valid, 
+	printf("T%p %lu V=%0X H=%p %s\n",
+	    (void *) __pth_gpointer_locked (t),
+	    GetCurrentThreadId(),
+	    (__pth_gpointer_locked (t))->valid,
 	    (__pth_gpointer_locked (t))->h,
 	    txt
 	    );
@@ -620,7 +628,7 @@ leaveOnceObject (collect_once_t *c)
 	}
     }
   else
-    fprintf(stderr, "%p not found?!?!\n", c);
+    fprintf(stderr, "%p not found?!?!\n", (void *) c);
   pthread_spin_unlock (&once_global);
 }
 
@@ -651,7 +659,7 @@ _pthread_once_raw (pthread_once_t *o, void (*func)(void))
       *o = 1;
     }
   else if (*o != 1)
-    fprintf (stderr," once %p is %d\n", o, (int) *o);
+    fprintf (stderr," once %p is %ld\n", (void *) o, (long) *o);
   pthread_mutex_unlock(&co->m);
   leaveOnceObject(co);
 
@@ -776,7 +784,7 @@ pthread_once (pthread_once_t *o, void (*func)(void))
       *o = 1;
     }
   else if (*o != 1)
-    fprintf (stderr," once %p is %d\n", o, (int) *o);
+    fprintf (stderr," once %p is %ld\n", (void *) o, (long) *o);
   pthread_mutex_unlock(&co->m);
   leaveOnceObject(co);
 

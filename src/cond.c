@@ -67,11 +67,11 @@ void cond_print(volatile pthread_cond_t *c, char *txt)
     if (!print_state) return;
     cond_t *c_ = (cond_t *)*c;
     if (c_ == NULL) {
-        fprintf(fo,"C%p %d %s\n",(void *)*c,(int)GetCurrentThreadId(),txt);
+        fprintf(fo,"C%p %lu %s\n",(void *)*c,GetCurrentThreadId(),txt);
     } else {
-        fprintf(fo,"C%p %d V=%0X w=%ld %s\n",
+        fprintf(fo,"C%p %lu V=%0X w=%ld %s\n",
             (void *)*c,
-            (int)GetCurrentThreadId(), 
+            GetCurrentThreadId(),
             (int)c_->valid, 
             c_->waiters_count_,
             txt
@@ -202,9 +202,9 @@ pthread_cond_init (pthread_cond_t *c, const pthread_condattr_t *a)
   if (a && *a == PTHREAD_PROCESS_SHARED)
     return ENOSYS;
 
-  if ( !(_c = calloc(1,sizeof(*_c))) ) {
-      return ENOMEM; 
-  }
+  if ((_c = calloc(1, sizeof(*_c))) == NULL)
+    return ENOMEM;
+
   _c->valid  = DEAD_COND;
   _c->busy = 0;
   _c->waiters_count_ = 0;

@@ -88,9 +88,6 @@ mutex_impl_init(pthread_mutex_t *m, mutex_impl_t *mi)
   }
 }
 
-#define likely(cond) __builtin_expect((cond) != 0, 1)
-#define unlikely(cond) __builtin_expect((cond) != 0, 0)
-
 /* Return the implementation part of a mutex, creating it if necessary.
    Return NULL on out-of-memory error. */
 static inline mutex_impl_t *
@@ -102,7 +99,7 @@ mutex_impl(pthread_mutex_t *m)
   } else {
     /* mi cannot be null here; avoid a test in the fast path. */
     if (mi == NULL)
-      __builtin_unreachable();
+      UNREACHABLE();
     return mi;
   }
 }

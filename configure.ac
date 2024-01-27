@@ -16,9 +16,16 @@ AC_CANONICAL_HOST
 # Checks for programs.
 AC_NO_EXECUTABLES
 AC_PROG_CC
-AC_PROG_RANLIB
 AM_PROG_AS
 AM_PROG_AR
+
+AS_CASE([$CC],
+  [*cl|*cl.exe],
+    [RC="$am_aux_dir/windres-rc rc.exe"
+     msvc=true],
+  [msvc=false]])
+AC_SUBST([RCFLAGS])
+AM_CONDITIONAL([MSVC], [test x$msvc = xtrue])
 
 # Libtool 2.4 should check them correctly
 # AC_CHECK_TOOLS([AR],[ar],[:])
@@ -50,8 +57,6 @@ AC_TYPE_SIZE_T
 #AC_FUNC_REALLOC
 # mingw-w64 should already have them
 #AC_CHECK_FUNCS([ftime gettimeofday memset])
-
-AC_SUBST([RCFLAGS])
 
 AC_CONFIG_FILES([Makefile tests/Makefile])
 AC_OUTPUT
