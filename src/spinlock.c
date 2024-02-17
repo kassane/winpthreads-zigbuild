@@ -50,15 +50,9 @@ int
 pthread_spin_lock (pthread_spinlock_t *lock)
 {
   volatile spinlock_word_t *lk = (volatile spinlock_word_t *)lock;
-  while (unlikely(__sync_lock_test_and_set(lk, 0) == 0))
+  while (unlikely(InterlockedExchangePointer((PVOID volatile *)lk, 0) == 0))
     do {
-#if defined(__i386__) || defined(__x86_64__)
-      asm("pause" ::: "memory");
-#elif defined(__arm__) || defined(__aarch64__)
-      asm("wfe" ::: "memory");
-#else
-#error Unsupported architecture
-#endif
+      YieldProcessor();
     } while (*lk == 0);
   return 0;
 }
@@ -67,7 +61,7 @@ int
 pthread_spin_trylock (pthread_spinlock_t *lock)
 {
   spinlock_word_t *lk = (spinlock_word_t *)lock;
-  return __sync_lock_test_and_set(lk, 0) == 0 ? EBUSY : 0;
+  return InterlockedExchangePointer((PVOID volatile *)lk, 0) == 0 ? EBUSY : 0;
 }
 
 

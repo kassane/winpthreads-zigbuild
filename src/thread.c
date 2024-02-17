@@ -81,7 +81,7 @@ static ULONG (*RemoveVectoredExceptionHandlerFuncPtr) (PVOID);
 static void __attribute__((constructor))
 ctor (void)
 {
-  HMODULE module = GetModuleHandle("kernel32.dll");
+  HMODULE module = GetModuleHandleA("kernel32.dll");
   if (module) {
     AddVectoredExceptionHandlerFuncPtr = (__typeof__(AddVectoredExceptionHandlerFuncPtr)) GetProcAddress(module, "AddVectoredExceptionHandler");
     RemoveVectoredExceptionHandlerFuncPtr = (__typeof__(RemoveVectoredExceptionHandlerFuncPtr)) GetProcAddress(module, "RemoveVectoredExceptionHandler");
@@ -533,8 +533,9 @@ __dyn_tls_pthread (HANDLE hDllHandle, DWORD dwReason, LPVOID lpreserved)
 # pragma section(".CRT$XLF", long, read)
 #endif
 
-extern const PIMAGE_TLS_CALLBACK WINPTHREADS_ATTRIBUTE((WINPTHREADS_SECTION(".CRT$XLF"))) __xl_f;
-const PIMAGE_TLS_CALLBACK WINPTHREADS_ATTRIBUTE((WINPTHREADS_SECTION(".CRT$XLF"))) __xl_f  = __dyn_tls_pthread;
+WINPTHREADS_ATTRIBUTE((WINPTHREADS_SECTION(".CRT$XLF")))
+extern const PIMAGE_TLS_CALLBACK __xl_f;
+const PIMAGE_TLS_CALLBACK __xl_f = __dyn_tls_pthread;
 
 
 #ifdef WINPTHREAD_DBG
@@ -1524,7 +1525,7 @@ void _fpreset (void);
 __attribute__((force_align_arg_pointer))
 #  endif
 #endif
-int
+unsigned __stdcall
 pthread_create_wrapper (void *args)
 {
   unsigned rslt = 0;
@@ -1607,8 +1608,11 @@ pthread_create (pthread_t *th, const pthread_attr_t *attr, void *(* func)(void *
   HANDLE thrd = NULL;
   int redo = 0;
   struct _pthread_v *tv;
-  size_t ssize = 0;
+  unsigned int ssize = 0;
   pthread_spinlock_t new_spin_keys = PTHREAD_SPINLOCK_INITIALIZER;
+
+  if (attr && attr->s_size > UINT_MAX)
+    return EINVAL;
 
   if ((tv = pop_pthread_mem ()) == NULL)
     return EAGAIN;
@@ -1649,7 +1653,7 @@ pthread_create (pthread_t *th, const pthread_attr_t *attr, void *(* func)(void *
     {
       int inh = 0;
       tv->p_state = attr->p_state;
-      ssize = attr->s_size;
+      ssize = (unsigned int)attr->s_size;
       pthread_attr_getinheritsched (attr, &inh);
       if (inh)
 	{
@@ -1662,7 +1666,7 @@ pthread_create (pthread_t *th, const pthread_attr_t *attr, void *(* func)(void *
   /* Make sure tv->h has value of INVALID_HANDLE_VALUE */
   _ReadWriteBarrier();
 
-  thrd = (HANDLE) _beginthreadex(NULL, ssize, (unsigned int (__stdcall *)(void *))pthread_create_wrapper, tv, 0x4/*CREATE_SUSPEND*/, NULL);
+  thrd = (HANDLE) _beginthreadex(NULL, ssize, pthread_create_wrapper, tv, 0x4/*CREATE_SUSPEND*/, NULL);
   if (thrd == INVALID_HANDLE_VALUE)
     thrd = 0;
   /* Failed */

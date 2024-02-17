@@ -1,6 +1,8 @@
 The Winpthreads Library for Zig
 -----------------------
 
+[![build](https://github.com/kassane/winpthreads-zigbuild/actions/workflows/build.yml/badge.svg)](https://github.com/kassane/winpthreads-zigbuild/actions/workflows/build.yml)
+
 Based on: https://github.com/ziglang/zig/issues/10989
 
 Zig toolchain/MinGW don't includes `winpthreads`.
