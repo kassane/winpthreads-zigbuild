@@ -48,7 +48,7 @@ pub fn build(b: *std.Build) void {
     lib.addIncludePath(.{ .path = "src" });
     lib.linkLibC();
     b.installArtifact(lib);
-    lib.installHeadersDirectory("include", "");
+    lib.installHeadersDirectory(.{ .path = "include" }, "", .{});
 
     if (tests) {
         buildExe(b, lib, .{
