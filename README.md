@@ -30,7 +30,7 @@ cd your-project-folder
 # generate both (exe and lib template w/ build.zig & build.zig.zon)
 zig init
 # get latest version (commit-tag or branch)
-zig fetch git+https://github.com/kassane/winpthreads-zigbuild#master
+zig fetch git+https://github.com/kassane/winpthreads-zigbuild#main
 ```
 
 * Add on current project:
@@ -39,7 +39,7 @@ zig fetch git+https://github.com/kassane/winpthreads-zigbuild#master
 # (w/ build.zig & build.zig.zon)
 cd your-project-folder
 # get latest version
-zig fetch git+https://github.com/kassane/winpthreads-zigbuild#master # or #commit-tag
+zig fetch git+https://github.com/kassane/winpthreads-zigbuild#main # or #commit-tag
 ```
 
-**Warn:** `master` branch changes commit hashes.
+**Warn:** `main` branch changes commit hashes.
