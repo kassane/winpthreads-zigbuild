@@ -44,11 +44,11 @@ pub fn build(b: *std.Build) void {
         "-Wextra",
     } });
     lib.defineCMacro("__USE_MINGW_ANSI_STDIO", "1");
-    lib.addIncludePath(.{ .path = "include" });
-    lib.addIncludePath(.{ .path = "src" });
+    lib.addIncludePath(b.path("include"));
+    lib.addIncludePath(b.path("src"));
     lib.linkLibC();
     b.installArtifact(lib);
-    lib.installHeadersDirectory(.{ .path = "include" }, "", .{});
+    lib.installHeadersDirectory(b.path("include"), "", .{});
 
     if (tests) {
         buildExe(b, lib, .{
@@ -78,11 +78,11 @@ fn buildExe(b: *std.Build, pthread: *std.Build.Step.Compile, binfo: BuildInfo) v
         exe.root_module.strip = true;
     if (target.result.os.tag == .windows)
         exe.want_lto = false;
-    exe.addIncludePath(.{ .path = "include" });
-    exe.addIncludePath(.{ .path = "src" });
+    exe.addIncludePath(b.path("include"));
+    exe.addIncludePath(b.path("src"));
     exe.linkLibrary(pthread);
     exe.addCSourceFile(.{
-        .file = .{ .path = binfo.file },
+        .file = b.path(binfo.file),
         .flags = &.{
             "-Wall",
             "-Wextra",
