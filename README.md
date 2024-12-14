@@ -4,8 +4,10 @@ The Winpthreads Library for Zig
 [![build](https://github.com/kassane/winpthreads-zigbuild/actions/workflows/build.yml/badge.svg)](https://github.com/kassane/winpthreads-zigbuild/actions/workflows/build.yml)
 
 Based on: https://github.com/ziglang/zig/issues/10989
+solved:
+https://github.com/ziglang/zig/pull/22156 (Zig v0.14.0)
 
-Zig toolchain/MinGW don't includes `winpthreads`.
+Zig v0.6 ~ v0.13.0 toolchain/MinGW don't includes `winpthreads`.
 
 This library provides POSIX threading APIs for mingw-w64.
 
@@ -19,7 +21,7 @@ bit more efficient.
 How to use
 ---------
 
-**Requires:** zig v0.12.0 or higher
+**Requires:** zig v0.12.0 or v0.13.0
 
 
 * Make a project:
