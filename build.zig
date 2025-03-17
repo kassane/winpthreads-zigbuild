@@ -43,7 +43,7 @@ pub fn build(b: *std.Build) void {
         "-Wall",
         "-Wextra",
     } });
-    lib.defineCMacro("__USE_MINGW_ANSI_STDIO", "1");
+    lib.root_module.addCMacro("__USE_MINGW_ANSI_STDIO", "1");
     lib.addIncludePath(b.path("include"));
     lib.addIncludePath(b.path("src"));
     lib.linkLibC();
